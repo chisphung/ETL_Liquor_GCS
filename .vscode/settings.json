@@ -1,0 +1,10 @@
+{
+  "sqltools.connections": [
+    {
+      "previewLimit": 100,
+      "driver": "SQLite",
+      "name": "liquor_wh",
+      "database": "${workspaceFolder:New folder}/liquor_sales.db"
+    }
+  ]
+}
