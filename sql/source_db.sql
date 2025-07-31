@@ -25,6 +25,5 @@ CREATE TABLE Staging_Sales (
     sale_liters TEXT,
     sale_gallons TEXT,
     file_name TEXT NOT NULL,
-    processed_timestamp DATETIME NOT NULL,
-    record_source TEXT NOT NULL
+    processed_timestamp DATETIME NOT NULL
 );

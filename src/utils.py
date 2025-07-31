@@ -24,7 +24,9 @@ def process_scd_type2(df, dim_table, key_col, attributes, conn):
             end_date=None,
             is_active=True
         )
-        df.to_sql(dim_table, conn, if_exists='append', index=False)
+        print(datetime.now().date())
+        if not df.empty:
+            df.to_sql(dim_table, conn, if_exists='append', index=False)
         return
     
     # Find new and changed records
@@ -39,7 +41,8 @@ def process_scd_type2(df, dim_table, key_col, attributes, conn):
             end_date=None,
             is_active=True
         )
-        new_records.to_sql(dim_table, conn, if_exists='append', index=False)
+        if not new_records.empty:
+            new_records.to_sql(dim_table, conn, if_exists='append', index=False)
     
     # Changed records
     changed_records = merged[merged['_merge'] == 'both'].copy()
@@ -62,4 +65,5 @@ def process_scd_type2(df, dim_table, key_col, attributes, conn):
             end_date=None,
             is_active=True
         )
-        new_versions.to_sql(dim_table, conn, if_exists='append', index=False)
+        if not new_versions.empty:
+            new_versions.to_sql(dim_table, conn, if_exists='append', index=False)

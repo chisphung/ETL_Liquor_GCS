@@ -20,7 +20,6 @@ CREATE TABLE Store_Dim (
     address TEXT,
     city TEXT,
     zipcode TEXT,
-    store_location TEXT,
     county_number TEXT,
     county TEXT,
     start_date DATE NOT NULL,
