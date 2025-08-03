@@ -12,7 +12,7 @@ def get_processed_files(engine):
 # Process SCD Type 2 for dimensions with improved merge technique
 def process_scd_type2(df, dim_table, key_col, attributes, conn):
     """Handle Slowly Changing Dimension Type 2 changes"""
-    current_dim = pd.read_sql(f"SELECT * FROM {dim_table} WHERE is_active = 1", conn)
+    current_dim = pd.read_sql(f"SELECT * FROM {dim_table} WHERE is_active = 1", conn).astype({key_col: str})
     
     # Create a copy to avoid SettingWithCopyWarning
     df = df.copy()

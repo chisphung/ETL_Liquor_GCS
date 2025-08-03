@@ -1,3 +1,8 @@
 ./ vscode
 __pycache__
 processed\total_sale.csv
+/.venv
+*.csv
+*.sql
+*.db
+*.zip
