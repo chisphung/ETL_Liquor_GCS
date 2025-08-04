@@ -1,80 +1,85 @@
-DROP TABLE IF EXISTS Date_Dim;
-DROP TABLE IF EXISTS Store_Dim;
-DROP TABLE IF EXISTS Item_Dim;
-DROP TABLE IF EXISTS Vendor_Dim;
-DROP TABLE IF EXISTS Sales_Fact;
+-- Drop tables if they exist (BigQuery supports this)
+DROP TABLE IF EXISTS `smooth-hub-460704-v8.liquor_sale_.Date_Dim`;
+DROP TABLE IF EXISTS `smooth-hub-460704-v8.liquor_sale_.Store_Dim`;
+DROP TABLE IF EXISTS `smooth-hub-460704-v8.liquor_sale_.Item_Dim`;
+DROP TABLE IF EXISTS `smooth-hub-460704-v8.liquor_sale_.Vendor_Dim`;
+DROP TABLE IF EXISTS `smooth-hub-460704-v8.liquor_sale_.Sales_Fact`;
+
 -- Date Dimension
-CREATE TABLE Date_Dim (
-    date_key INTEGER PRIMARY KEY AUTOINCREMENT,
-    date DATE NOT NULL,
-    year INTEGER,
-    month INTEGER,
-    day INTEGER,
-    quarter INTEGER,
-    weekday TEXT
+CREATE TABLE `smooth-hub-460704-v8.liquor_sale_.Date_Dim` (
+  date_key INT64,
+  date DATE NOT NULL,
+  year INT64,
+  month INT64,
+  day INT64,
+  quarter INT64,
+  weekday STRING
 );
+
 -- Store Dimension (SCD Type 2)
-CREATE TABLE Store_Dim (
-    store_key INTEGER PRIMARY KEY AUTOINCREMENT,
-    store_id INTEGER NOT NULL,
-    address TEXT,
-    city TEXT,
-    zipcode TEXT,
-    county_number TEXT,
-    county TEXT,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    is_active BOOLEAN DEFAULT TRUE
+CREATE TABLE `smooth-hub-460704-v8.liquor_sale_.Store_Dim` (
+  store_key INT64,
+  store_id INT64 NOT NULL,
+  address STRING,
+  city STRING,
+  zipcode STRING,
+  county_number STRING,
+  county STRING,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  is_active BOOL DEFAULT TRUE
 );
+
 -- Item Dimension (SCD Type 2)
-CREATE TABLE Item_Dim (
-    item_key INTEGER PRIMARY KEY AUTOINCREMENT,
-    itemno TEXT NOT NULL,
-    im_desc TEXT,
-    category TEXT,
-    category_name TEXT,
-    pack FLOAT,
-    bottle_volume_ml FLOAT,
-    state_bottle_cost DECIMAL(10, 2),
-    state_bottle_retail DECIMAL(10, 2),
-    start_date DATE NOT NULL,
-    end_date DATE,
-    is_active BOOLEAN DEFAULT TRUE
+CREATE TABLE `smooth-hub-460704-v8.liquor_sale_.Item_Dim` (
+  item_key INT64,
+  itemno STRING NOT NULL,
+  im_desc STRING,
+  category STRING,
+  category_name STRING,
+  pack FLOAT64,
+  bottle_volume_ml FLOAT64,
+  state_bottle_cost NUMERIC(10, 2),
+  state_bottle_retail NUMERIC(10, 2),
+  start_date DATE NOT NULL,
+  end_date DATE,
+  is_active BOOL DEFAULT TRUE
 );
+
 -- Vendor Dimension (SCD Type 2)
-CREATE TABLE Vendor_Dim (
-    vendor_key INTEGER PRIMARY KEY AUTOINCREMENT,
-    vendor_no TEXT NOT NULL,
-    vendor_name TEXT,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    is_active BOOLEAN DEFAULT TRUE
+CREATE TABLE `smooth-hub-460704-v8.liquor_sale_.Vendor_Dim` (
+  vendor_key INT64,
+  vendor_no STRING NOT NULL,
+  vendor_name STRING,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  is_active BOOL DEFAULT TRUE
 );
+
 -- Sales Fact Table
-CREATE TABLE Sales_Fact (
-    sales_key INTEGER PRIMARY KEY AUTOINCREMENT,
-    invoice_line_no TEXT NOT NULL,
-    store INTEGER NOT NULL,
-    date_key INTEGER NOT NULL,
-    store_key INTEGER NOT NULL,
-    item_key INTEGER NOT NULL,
-    vendor_key INTEGER NOT NULL,
-    revenue DECIMAL(10, 2),
-    profit DECIMAL(10, 2),
-    cost DECIMAL(10, 2),
-    total_bottles_sold INTEGER,
-    total_volume_sold_in_liters DECIMAL(10, 2),
-    profit_margin DECIMAL(5, 2),
-    average_bottle_price DECIMAL(10, 2),
-    volume_per_bottle_sold DECIMAL(10, 2),
-    processed_timestamp DATETIME,
-    FOREIGN KEY (date_key) REFERENCES Date_Dim(date_key),
-    FOREIGN KEY (store_key) REFERENCES Store_Dim(store_key),
-    FOREIGN KEY (item_key) REFERENCES Item_Dim(item_key),
-    FOREIGN KEY (vendor_key) REFERENCES Vendor_Dim(vendor_key),
-    UNIQUE (invoice_line_no, store)
+CREATE TABLE `smooth-hub-460704-v8.liquor_sale_.Sales_Fact` (
+  sales_key INT64,
+  invoice_line_no STRING NOT NULL,
+  store INT64 NOT NULL,
+  date_key INT64 NOT NULL,
+  store_key INT64 NOT NULL,
+  item_key INT64 NOT NULL,
+  vendor_key INT64 NOT NULL,
+  revenue NUMERIC(10, 2),
+  profit NUMERIC(10, 2),
+  cost NUMERIC(10, 2),
+  total_bottles_sold INT64,
+  total_volume_sold_in_liters NUMERIC(10, 2),
+  profit_margin NUMERIC(5, 2),
+  average_bottle_price NUMERIC(10, 2),
+  volume_per_bottle_sold NUMERIC(10, 2),
+  processed_timestamp DATETIME
+  -- Foreign keys not enforced in BigQuery, just for documentation
 );
-CREATE INDEX idx_date_key ON Sales_Fact(date_key);
-CREATE INDEX idx_store_key ON Sales_Fact(store_key);
-CREATE INDEX idx_item_key ON Sales_Fact(item_key);
-CREATE INDEX idx_vendor_key ON Sales_Fact(vendor_key);
+
+-- Indexes → BigQuery does not support CREATE INDEX
+-- Instead, use clustering or partitioning if needed
+
+-- Example clustering (optional)
+-- CREATE TABLE `smooth-hub-460704-v8.liquor_sale_.Sales_Fact`
+-- CLUSTER BY date_key, store_key, item_key, vendor_key

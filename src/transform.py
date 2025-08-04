@@ -1,21 +1,26 @@
 from src.config import engine
 import pandas as pd
+from google.cloud import bigquery
+from src.config import PROJECT_ID, DATASET_ID
+import pandas_gbq
 
 def transform():
     print("Starting transform phase...")
     
     # Get all unprocessed records from staging
-    staging_query = """
-        SELECT * FROM Staging_Sales
-        WHERE processed_timestamp > COALESCE((SELECT MAX(processed_timestamp) FROM Sales_Fact), '1900-01-01')
+    staging_query = f"""
+        SELECT * FROM `{PROJECT_ID}.{DATASET_ID}.Staging_Sales`
+        WHERE processed_timestamp > COALESCE((SELECT MAX(processed_timestamp) FROM `{PROJECT_ID}.{DATASET_ID}.Sales_Fact`), '1900-01-01')
     """
     
     try:
-        staging_data = pd.read_sql(staging_query, engine)
+        # staging_data = pd.read_sql(staging_query, engine)
+        staging_data = pandas_gbq.read_gbq(staging_query, project_id=PROJECT_ID)
     except:
         # First run - get all data
-        staging_data = pd.read_sql("SELECT * FROM Staging_Sales", engine)
-    
+        # staging_data = pd.read_sql("SELECT * FROM Staging_Sales", engine)
+        staging_data = pandas_gbq.read_gbq("SELECT * FROM `{PROJECT_ID}.{DATASET_ID}.Staging_Sales`", project_id=PROJECT_ID)
+
     if staging_data.empty:
         print("No new data to transform.")
         return None

@@ -17,11 +17,11 @@ from src.config import INPUT_DIR, PROCESSED_DIR, BATCH_SIZE, engine, POLL_INTERV
 
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
-class FileHandler(FileSystemEventHandler):
-    def on_created(self, event):
-        if not event.is_directory and event.src_path.endswith('.csv'):
-            print(f"Detected new file: {event.src_path}")
-            process_new_files()
+# class FileHandler(FileSystemEventHandler):
+#     def on_created(self, event):
+#         if not event.is_directory and event.src_path.endswith('.csv'):
+#             print(f"Detected new file: {event.src_path}")
+#             process_new_files()
 
 def process_new_files():
     # Step 1: Extract (raw data only)
@@ -33,25 +33,10 @@ def process_new_files():
         transformed_data = transform()
         load(transformed_data)
 
-def continuous_processing():
-    event_handler = FileHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path=INPUT_DIR, recursive=False)
-    observer.start()
-    
-    print(f"Starting continuous processing, monitoring {INPUT_DIR} for new files...")
-    
-    try:
-        while True:
-            time.sleep(POLL_INTERVAL)
-    except KeyboardInterrupt:
-        observer.stop()
-    
-    observer.join()
 
 if __name__ == "__main__":
     # Initial processing of any existing files
     process_new_files()
     
     # Start continuous processing
-    continuous_processing()
+    # continuous_processing()
