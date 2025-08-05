@@ -1,0 +1,53 @@
+main:
+  params: [event]
+  steps:
+    - init:
+        assign:
+          - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          - event_bucket: ${event.data.bucket}
+          - event_file: ${event.data.name}
+          - target_file: 
+          - job_name: "liquor-sales"
+          - job_location: "us-central1"
+
+    - check_input_file:
+        switch:
+          - condition: ${event_bucket == target_bucket}
+            next: run_job
+          - condition: true
+            next: skip_job
+
+    - run_job:
+        call: googleapis.run.v1.namespaces.jobs.run
+        args:
+          name: ${"namespaces/" + project_id + "/jobs/" + job_name}
+          location: ${job_location}
+          body:
+            overrides:
+              containerOverrides:
+                env:
+                  - name: INPUT_BUCKET
+                    value: ${event_bucket}
+                  - name: INPUT_FILE
+                    value: ${event_file}
+        result: job_execution
+        next: log_success
+
+    - log_success:
+        call: sys.log
+        args:
+          text: ${"ETL job triggered successfully for file:" + event_file}
+        next: finish
+
+    - skip_job:
+        call: sys.log
+        args:
+          text: ${"File is not in the expected bucket (" + target_bucket + "). Skipping."}
+        next: finish
+
+    - finish:
+        return: "Workflow completed."
+
+
+
+{"data":{"bucket":"chipshung_etl_process","name":"sales_${DATE}.csv"}}
