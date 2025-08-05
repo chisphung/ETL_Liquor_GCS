@@ -17,6 +17,7 @@ def get_processed_files(project_id=PROJECT_ID, dataset_name=DATASET_ID):
         set: Set of processed file names.
     """
     try:
+        print(f"Fetching processed files from {dataset_name}.Processed_Files...")
         query = f"SELECT file_name FROM {dataset_name}.Processed_Files"
         return set(pandas_gbq.read_gbq(query, project_id=PROJECT_ID)['file_name'])
     except GoogleAPIError as e:
@@ -50,12 +51,12 @@ def process_scd_type2(df, dim_table, key_col, attributes, project_id=PROJECT_ID,
     """
     client = bigquery.Client(project=PROJECT_ID)
     df = df.copy()
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            try:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-            except:
-                pass
+    # for col in df.columns:
+    #     if df[col].dtype == 'object':
+    #         try:
+    #             df[col] = pd.to_numeric(df[col], errors='coerce')
+    #         except:
+    #             pass
 
     # Read current active records
     try:

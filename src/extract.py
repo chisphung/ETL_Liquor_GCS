@@ -18,6 +18,7 @@ from src.config import INPUT_DIR, PROCESSED_DIR, BATCH_SIZE, engine, POLL_INTERV
 #         self.bucket_files = bucket_files
 
 def extract(bucket_files = []):
+    print("Starting data extraction...")
     processed_files = get_processed_files(project_id=PROJECT_ID)
     # for blob in self.bucket_files:
     #     if blob.name.endswith('.csv'):
@@ -34,7 +35,12 @@ def extract(bucket_files = []):
     #         if blob.name in new_files:
     #             blob.download_to_filename(os.path.join(INPUT_DIR, blob.name))
     #             downloaded_files.append(os.path.join(INPUT_DIR, blob.name))
+
+    if not new_files:
+        print("No new files to process.")
+        return False
     
+    print(f"Downloading new files: {[blob.name for blob in new_files]}")
     for blob in new_files:
         file_path = os.path.join(INPUT_DIR, blob.name)
         blob.download_to_filename(file_path)
@@ -44,11 +50,6 @@ def extract(bucket_files = []):
         print("No new files to process.")
         return False
                 
-
-    if not new_files:
-        print("No new files to process.")
-        return False
-    
     for file in downloaded_files:
         print(f"Loading {file} into Staging_Sales...")
         file_basename = os.path.basename(file)

@@ -5,6 +5,7 @@ from src.common import UserCredentials
 from src.utils import process_scd_type2
 from src.config import PROJECT_ID, DATASET_ID
 import gc
+from decimal import Decimal, ROUND_HALF_UP
 
 def load(transformed_data, dataset_name=DATASET_ID):
     if not transformed_data:
@@ -27,7 +28,7 @@ def load(transformed_data, dataset_name=DATASET_ID):
         print("Loaded Date_Dim")
     
     if not transformed_data['stores'].empty:
-        transformed_data['stores'] = transformed_data['stores'].astype({'store': int})
+        transformed_data['stores'] = transformed_data['stores'].astype({'store': int, 'address': str, 'city': str, 'zipcode': str, 'county_number': str, 'county': str})
         stores = transformed_data['stores'].rename(columns={'store': 'store_id'})
         # process_scd_type2(stores, f'{dataset_name}.Store_Dim', 'store_id', 
         #                 ['address', 'city', 'zipcode', 'county_number', 'county'], project_id=PROJECT_ID)
@@ -57,11 +58,26 @@ def load(transformed_data, dataset_name=DATASET_ID):
         # print("Loaded Item_Dim")
         items_df = transformed_data['items'].copy()
         items_df['itemno'] = items_df['itemno'].astype(str)
-        items_df['bottle_volume_ml'] = items_df['bottle_volume_ml'].astype(float)
-        items_df['state_bottle_cost'] = items_df['state_bottle_cost'].astype(float).round(2)
-        items_df['state_bottle_retail'] = items_df['state_bottle_retail'].astype(float).round(2)
-        items_df['pack'] = items_df['pack'].astype(float)
-
+        items_df['bottle_volume_ml'] = items_df['bottle_volume_ml'].astype(float).round(2)
+        items_df['pack'] = items_df['pack'].astype(float).round(2)
+        # Convert to Decimal with 2 decimal places to match NUMERIC(10, 2)
+        items_df['state_bottle_cost'] = items_df['state_bottle_cost'].astype(float).apply(
+            lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        )
+        items_df['state_bottle_retail'] = items_df['state_bottle_retail'].astype(float).apply(
+            lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        )
+        
+        # Validate data to ensure it fits NUMERIC(10, 2)
+        invalid_cost = items_df[items_df['state_bottle_cost'].apply(lambda x: abs(x) > 99999999.99)]
+        invalid_retail = items_df[items_df['state_bottle_retail'].apply(lambda x: abs(x) > 99999999.99)]
+        if not invalid_cost.empty or not invalid_retail.empty:
+            print("Warning: Values exceed NUMERIC(10, 2) limits:")
+            print("Invalid state_bottle_cost:", invalid_cost)
+            print("Invalid state_bottle_retail:", invalid_retail)
+            raise ValueError("Data contains values exceeding NUMERIC(10, 2) limits")
+        
+        # print(f"Processing Item_dim:\n{items_df}")
         process_scd_type2(items_df, f'Item_Dim', 'itemno',
             ['category', 'category_name', 'pack', 'bottle_volume_ml',
             'state_bottle_cost', 'state_bottle_retail'])
@@ -79,15 +95,15 @@ def load(transformed_data, dataset_name=DATASET_ID):
                            project_id=PROJECT_ID)
     date_keys['date'] = pd.to_datetime(date_keys['date'])
 
-    store_keys = pandas_gbq.read_gbq(f"SELECT store_id, store_key FROM {dataset_name}.Store_Dim WHERE is_active = 1", 
+    store_keys = pandas_gbq.read_gbq(f"SELECT store_id, store_key FROM {dataset_name}.Store_Dim WHERE is_active = TRUE", 
                             project_id=PROJECT_ID)
     store_keys['store_id'] = store_keys['store_id'].astype(int)
 
-    item_keys = pandas_gbq.read_gbq(f"SELECT itemno, item_key FROM {dataset_name}.Item_Dim WHERE is_active = 1", 
+    item_keys = pandas_gbq.read_gbq(f"SELECT itemno, item_key FROM {dataset_name}.Item_Dim WHERE is_active = TRUE", 
                            project_id=PROJECT_ID)
     item_keys['itemno'] = item_keys['itemno'].astype(str)
 
-    vendor_keys = pandas_gbq.read_gbq(f"SELECT vendor_no, vendor_key FROM {dataset_name}.Vendor_Dim WHERE is_active = 1", 
+    vendor_keys = pandas_gbq.read_gbq(f"SELECT vendor_no, vendor_key FROM {dataset_name}.Vendor_Dim WHERE is_active = TRUE", 
                              project_id=PROJECT_ID)
     vendor_keys['vendor_no'] = vendor_keys['vendor_no'].astype(str)
     

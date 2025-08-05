@@ -1,15 +1,7 @@
-""" Main.py file to execute Extract, Transform, Load Job"""
-
-from src.common import (
-    CloudStorage,
-    UserCredentials,
-    BucketConfig
-)
-
 from src.extract import extract
 from src.transform import transform
 from src.load import load
-from src.config import PROJECT_ID, BUCKET_NAME, DATASET_ID, TABLE_ID, INPUT_PATH, OUTPUT_PATH
+from src.config import BUCKET_NAME, DATASET_ID, TABLE_ID, INPUT_PATH, OUTPUT_PATH
 from google.cloud import storage
 # from src.load import Load
 class ELTPipeline:
@@ -22,19 +14,16 @@ class ELTPipeline:
     def run(self):
         """ Method to execute ETL Pipeline"""
         extractor = extract(bucket_files=self.bucket_files)
-
+        if not extractor:
+            print("No new files to process. Exiting pipeline.")
+            return
         transformer = transform()
 
         load(transformed_data=transformer, dataset_name=DATASET_ID)
 
 
 if __name__ == "__main__":
-    # CREDS = UserCredentials().get_credentials()
 
-    # cloud_storage = CloudStorage(credentials=CREDS)
-
-    # Uncomment the below code to upload local dataset to Google Cloud Storage
-    # cloud_storage.insert_blob(bucket_name=BucketConfig.BUCKET_NAME, local_dir='raw-data/')
 
     storage_client = storage.Client()
 
