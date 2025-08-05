@@ -60,27 +60,36 @@ def load(transformed_data, dataset_name=DATASET_ID):
         items_df['itemno'] = items_df['itemno'].astype(str)
         items_df['bottle_volume_ml'] = items_df['bottle_volume_ml'].astype(float).round(2)
         items_df['pack'] = items_df['pack'].astype(float).round(2)
+    # Check for non-numeric or NaN values in numeric columns
+        for col in ['state_bottle_cost', 'state_bottle_retail']:
+            # Identify non-numeric or NaN values
+            invalid_rows = items_df[items_df[col].isna() | ~items_df[col].apply(lambda x: isinstance(x, (int, float, str)) and str(x).replace('.', '', 1).replace('-', '', 1).isdigit())]
+            if not invalid_rows.empty:
+                # print(f"Warning: Invalid values found in {col}:")
+                # print(invalid_rows[[col]])
+                # raise ValueError(f"Invalid values in {col}. Please clean the data.")
+                # invalid_rows[col] = "Uknown"  # Replace invalid values with a placeholder
+                invalid_rows = invalid_rows[col].apply(lambda x: "Unknown" if pd.isna(x) or not isinstance(x, (int, float, str)) or not str(x).replace('.', '', 1).replace('-', '', 1).isdigit() else x)
+                items_df.loc[invalid_rows.index, col] = invalid_rows
+        
         # Convert to Decimal with 2 decimal places to match NUMERIC(10, 2)
-        items_df['state_bottle_cost'] = items_df['state_bottle_cost'].astype(float).apply(
-            lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        )
-        items_df['state_bottle_retail'] = items_df['state_bottle_retail'].astype(float).apply(
-            lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        )
+        for col in ['state_bottle_cost', 'state_bottle_retail']:
+            items_df[col] = items_df[col].astype(float).apply(
+                lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) if not pd.isna(x) else Decimal('0.00')
+            )
         
         # Validate data to ensure it fits NUMERIC(10, 2)
-        invalid_cost = items_df[items_df['state_bottle_cost'].apply(lambda x: abs(x) > 99999999.99)]
-        invalid_retail = items_df[items_df['state_bottle_retail'].apply(lambda x: abs(x) > 99999999.99)]
-        if not invalid_cost.empty or not invalid_retail.empty:
-            print("Warning: Values exceed NUMERIC(10, 2) limits:")
-            print("Invalid state_bottle_cost:", invalid_cost)
-            print("Invalid state_bottle_retail:", invalid_retail)
-            raise ValueError("Data contains values exceeding NUMERIC(10, 2) limits")
+        for col in ['state_bottle_cost', 'state_bottle_retail']:
+            invalid_rows = items_df[items_df[col].apply(lambda x: abs(x) > Decimal('99999999.99'))]
+            if not invalid_rows.empty:
+                print(f"Warning: Values in {col} exceed NUMERIC(10, 2) limits:")
+                print(invalid_rows[[col]])
+                raise ValueError(f"Data in {col} contains values exceeding NUMERIC(10, 2) limits")
         
-        # print(f"Processing Item_dim:\n{items_df}")
-        process_scd_type2(items_df, f'Item_Dim', 'itemno',
-            ['category', 'category_name', 'pack', 'bottle_volume_ml',
-            'state_bottle_cost', 'state_bottle_retail'])
+        print(f"Processing Item_dim:\n{items_df}")
+        process_scd_type2(items_df, 'Item_Dim', 'itemno',
+                        ['category', 'category_name', 'pack', 'bottle_volume_ml',
+                        'state_bottle_cost', 'state_bottle_retail'])
         print("Loaded Item_Dim")
 
     
