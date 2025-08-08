@@ -32,6 +32,10 @@ Follow these steps to set up and run the ETL pipeline:
       ```bash
       gcloud auth login
       ```
+    - Set your project ID:
+      ```bash
+      gcloud config set project your-project-id
+      ```
 3. **Set Up Bigquery**
     - Create a BigQuery dataset named `liquor_sales`:
       ```bash
