@@ -73,15 +73,18 @@ Follow these steps to set up and run the ETL pipeline:
    - You can also monitor the progress in the Google Cloud Console under BigQuery and GCS.
    - Looker is also a great tool to visualize the data in BigQuery.
 
-9. **View Tables in SQLite** 👀
-   - Open the database in VS Code:
-     - Press `Ctrl+P`, type `> SQLite: Open Database`, and select `liquor_sales.db`.
-     - Use SQLite Explorer to view tables (`Date_Dim`, `Store_Dim`, `Item_Dim`, `Vendor_Dim`, `Sales_Fact`).
-     - Run queries to verify data:
-       ```sql
-       SELECT * FROM Sales_Fact LIMIT 10;
-       SELECT COUNT(*) FROM Sales_Fact;
-       ```
+9. **Docker is provided**
+   - To run the ETL process in a Docker container, build the Docker image:
+     ```bash
+     docker build -t etl-liquor-gcs .
+     ```
+   - Run the Docker container:
+     ```bash
+     docker run --rm -v $(pwd)/input:/app/input -v $(pwd)/output:/app/output etl-liquor-gcs
+     ```
+   - Note that you can also push the Docker image to a container registry (e.g., Google Container Registry) for deployment in a cloud environment. This allows for using Cloud Run or Kubernetes for scalable execution.
+   - After deploying on Cloud Run or Kubernetes, you can trigger the ETL process using HTTP requests or scheduled jobs.
+   - Cloud Workflows can also be used to orchestrate the ETL process, allowing for more complex workflows and scheduling and writing logs to Cloud Logging.
 
 ## Troubleshooting
 
