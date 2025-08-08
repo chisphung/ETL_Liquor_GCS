@@ -124,3 +124,7 @@ Follow these steps to set up and run the ETL pipeline:
 
 ## Conclusion
 This project demonstrates a complete ETL pipeline using Google Cloud services, modularized for maintainability. The use of Docker allows for easy deployment and execution in various environments. The modular design enables future enhancements, such as adding more data sources or processing steps.
+I also want to thank the original author of the [ETL Iowa Liquor Sale](https://github.com/dangnha/ETL_Iowa_liquor_sale) and AI Vietnam for supporting a great resource for learning ETL processes.
+## Contributing
+Contributions are welcome! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
+
