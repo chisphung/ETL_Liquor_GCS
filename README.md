@@ -1,62 +1,53 @@
-# ETL Iowa Liquor Sales 🍶
+# ETL Iowa Liquor Google Cloud Project
 
-This repository contains an **ETL (Extract, Transform, Load)** pipeline for processing Iowa liquor sales data into a **SQLite** database. The pipeline transforms raw sales data into a star schema with dimension and fact tables, efficiently handling large datasets (100k and 1M rows) using chunked processing.
+This repository is a variant of [ETL Iowa Liquor Sale](https://github.com/dangnha/ETL_Iowa_liquor_sale).
+I have modified the original project to use Google Cloud services, including Google Cloud Storage (GCS) for data storage and BigQuery for data processing and analysis. I also modularized the code to enhance maintainability and scalability. And included docker to make it easier to run the project in a containerized environment.
 
-## 📋 Prerequisites
+## Prerequisites
+- Python 3.12 or later
+- Google Cloud SDK installed and configured
+- Docker installed 
 
-- 🐍 **Python 3.8+**: For running ETL scripts and simulating data.
-- 💻 **Visual Studio Code (VS Code)**: For development and SQLite integration.
-- 🔌 **VS Code Extension**: SQLite Explorer or SQLite Viewer for database interaction.
-- 📦 **Python Libraries**: Install via `requirements.txt`:
-  ```bash
-  pip install -r requirements.txt
-  ```
 
-## 🚀 Step-by-Step Setup and Execution
+## Step-by-Step Setup and Execution
 
 Follow these steps to set up and run the ETL pipeline:
 
-1. **Clone the Repository** 🗂️
+1. **Clone the Repository** 
 
    - Clone the repository to your local machine and install dependencies:
      ```bash
-     git clone https://github.com/dangnha/ETL_Iowa_liquor_sale.git
-     cd ETL_Iowa_liquor_sale
+     git clone https://github.com/chisphung/ETL_Liquor_GCS.git
+     cd ETL_Liquor_GCS
      pip install -r requirements.txt
      ```
-
-2. **Set Up SQLite in VS Code** 🛠️
-
-   - Install the **SQLite Explorer** or **SQLite Viewer** extension:
-     - Open VS Code.
-     - Go to Extensions (`Ctrl+Shift+X` or `Cmd+Shift+X` on macOS).
-     - Search for "SQLite Explorer" or "SQLite Viewer" and install it.
-
-3. **Create the SQLite Database** 🗄️
-
-   - Create a new SQLite database named `liquor_sales.db`:
+2. **Set Up Google Cloud Project** 
+    - Create a new Google Cloud project or use an existing one.
+    - Enable the BigQuery and Google Cloud Storage APIs:
+      ```bash
+      gcloud services enable bigquery.googleapis.com
+      gcloud services enable storage.googleapis.com
+      ```
+    - Authenticate your Google Cloud SDK:
+      ```bash
+      gcloud auth login
+      ```
+3. **Set Up Bigquery**
+    - Create a BigQuery dataset named `liquor_sales`:
+      ```bash
+      bq mk liquor_sales
+      ```
+    - Create the necessary tables in BigQuery using the SQL scripts provided in the `sql/` folder.
+4. **Set Up Google Cloud Storage (GCS)**
+   - Create a GCS bucket to store input and output data:
      ```bash
-     sqlite3 liquor_sales.db
+     gsutil mb gs://your-bucket-name
      ```
-     - Exit the SQLite CLI by typing `.exit`.
+5. **Set Up Environment Variables**
+    - In `config.py`, set the environment variables as the example.
+    - Make sure that you have to change the variable names to match your GCS bucket and BigQuery dataset.
 
-4. **Connect to the SQLite Database in VS Code** 🔗
-
-   - Open VS Code and the cloned repository folder.
-   - Use the SQLite Explorer extension:
-     - Press `Ctrl+P` (or `Cmd+P` on macOS), type `> SQLite: Open Database`, and select `liquor_sales.db`.
-     - The database will appear in the SQLite Explorer panel.
-
-5. **Create Database Tables** 📑
-
-   - Run the SQL scripts to create dimension and fact tables:
-     - Locate the SQL scripts in the `sql/` folder (e.g., `create_tables.sql`).
-     - Run the scripts using SQLite Explorer or in the SQLite CLI:
-       ```bash
-       sqlite3 liquor_sales.db < sql/create_tables.sql
-       ```
-
-6. **Simulate Data** 📊
+6. **Simulate Data** 
 
    - Run the Jupyter notebook `Simulate_data.ipynb` to generate sample data (100k and 1M rows):
      ```bash
@@ -68,18 +59,19 @@ Follow these steps to set up and run the ETL pipeline:
        mv sales_data_*.csv input/
        ```
 
-7. **Run the ETL Process** ⚙️
+7. **Run the ETL Process** 
 
    - Run the ETL script to process data and load it into `Sales_Fact`:
      ```bash
-     python src/etl_process.py
+     python src/main.py
      ```
      - The script uses chunked processing to manage memory and handle issues like duplicate keys, merging sales data with dimension tables.
 
-8. **Monitor Processing** 📈
+8. **Monitor Processing** 
 
-   - Watch the ETL script’s logs (e.g., "Processing chunk 34 (1000 rows)...") for progress and errors.
-   - If errors like "Duplicate dates detected" occur, check dimension tables for duplicates (see Troubleshooting).
+   - Check the console output for processing status and any errors.
+   - You can also monitor the progress in the Google Cloud Console under BigQuery and GCS.
+   - Looker is also a great tool to visualize the data in BigQuery.
 
 9. **View Tables in SQLite** 👀
    - Open the database in VS Code:
@@ -91,9 +83,9 @@ Follow these steps to set up and run the ETL pipeline:
        SELECT COUNT(*) FROM Sales_Fact;
        ```
 
-## 🛑 Troubleshooting
+## Troubleshooting
 
-- **Duplicate Keys in Dimension Tables** 🔑
+- **Duplicate Keys in Dimension Tables** 
 
   - If the ETL script fails with "Duplicate dates detected," check for duplicates:
     ```sql
@@ -111,11 +103,11 @@ Follow these steps to set up and run the ETL pipeline:
     ```
   - Ensure `UNIQUE` constraints are defined in `sql/create_tables.sql`.
 
-- **Memory Issues** 💾
+- **Memory Issues** 
 
-  - The ETL script processes data in 1,000-row chunks. For large datasets (e.g., 1M rows), ensure sufficient memory or adjust `chunk_size` in `src/etl_process.py`.
+  - The ETL script processes data in 1,000-row chunks. For large datasets (e.g., 1M rows), ensure sufficient memory or adjust `chunk_size` in `src/load.py`.
 
-- **Unmatched Keys** ⚠️
+- **Unmatched Keys** 
 
   - If rows are dropped due to missing keys, log unmatched values:
     ```sql
@@ -123,19 +115,5 @@ Follow these steps to set up and run the ETL pipeline:
     ```
   - Update dimension tables to include missing keys.
 
-- **Database Connection Issues** 🔌
-  - Ensure `liquor_sales.db` is in the project root and accessible by VS Code and the ETL script.
-
-## ℹ️ Notes
-
-- 📁 The ETL script expects input CSV files in the `input/` folder.
-- 📊 The pipeline is optimized for large datasets (100k and 1M rows) using chunked processing.
-- 🔍 Dimension tables must be populated with unique keys before running the ETL script, as they provide foreign keys (`date_key`, `store_key`, `item_key`, `vendor_key`) for `Sales_Fact`.
-
-## 🤝 Contributing
-
-Contributions are welcome! Submit a pull request or open an issue on the [GitHub repository](https://github.com/dangnha/ETL_Iowa_liquor_sale).
-
-## 📜 License
-
-© 2025 dangnha. All rights reserved.
+## Conclusion
+This project demonstrates a complete ETL pipeline using Google Cloud services, modularized for maintainability. The use of Docker allows for easy deployment and execution in various environments. The modular design enables future enhancements, such as adding more data sources or processing steps.

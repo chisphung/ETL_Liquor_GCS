@@ -52,7 +52,7 @@ def load(transformed_data, dataset_name=DATASET_ID):
             if not invalid_rows.empty:
                 print(f"Warning: Invalid values found in {col}:")
                 print(invalid_rows[[col]])
-                items_df[col] = pd.to_numeric(items_df[col], errors='coerce').fillna(0).astype(float)
+                items_df[col] = pd.to_numeric(items_df[col], errors='coerce').fillna(-1).astype(float)
         
         # Convert to Decimal with 2 decimal places to match NUMERIC(10, 2)
         for col in ['state_bottle_cost', 'state_bottle_retail']:
@@ -102,6 +102,8 @@ def load(transformed_data, dataset_name=DATASET_ID):
     
     vendor_keys = pandas_gbq.read_gbq(f"SELECT vendor_no, vendor_key FROM {dataset_name}.Vendor_Dim WHERE is_active = TRUE", 
                                       project_id=PROJECT_ID)
+    vendor_keys['vendor_no'] = vendor_keys['vendor_no'].fillna('Unknown').astype(str)  # Fill NaN with 'Unknown'
+    vendor_keys['vendor_key'] = vendor_keys['vendor_key'].fillna(-1).astype(int)
     vendor_keys['vendor_no'] = vendor_keys['vendor_no'].astype(str)
     vendor_keys['vendor_key'] = vendor_keys['vendor_key'].astype(int)  # Ensure vendor_key is int
     
@@ -144,7 +146,7 @@ def load(transformed_data, dataset_name=DATASET_ID):
             if not invalid_rows.empty:
                 print(f"Warning: Invalid values in {col}:")
                 print(invalid_rows[[col]])
-                chunk[col] = pd.to_numeric(chunk[col], errors='coerce').fillna(-1).astype(int)
+            chunk[col] = pd.to_numeric(chunk[col], errors='coerce').fillna(-1).astype(int)
         
         # Convert date column
         chunk['date'] = pd.to_datetime(chunk['date'], errors='coerce')
@@ -156,20 +158,26 @@ def load(transformed_data, dataset_name=DATASET_ID):
         ]
         for col in numeric_cols:
             if col in chunk.columns:
-                chunk[col] = pd.to_numeric(chunk[col], errors='coerce').fillna(0).astype(float).apply(
+                chunk[col] = pd.to_numeric(chunk[col], errors='coerce').fillna(-1).astype(float).apply(
                     lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) 
                     if not pd.isna(x) else Decimal('0.00')
                 )
         
         if 'profit_margin' in chunk.columns:
-            chunk['profit_margin'] = pd.to_numeric(chunk['profit_margin'], errors='coerce').fillna(0).astype(float).apply(
+            # chunk['profit_margin'] = pd.to_numeric(chunk['profit_margin'], errors='coerce').fillna(-1).astype(float).apply(
+            #     lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) 
+            #     if not pd.isna(x) else Decimal('0.00')
+            # )
+            numeric_profit_margin = pd.to_numeric(chunk['profit_margin'], errors='coerce').fillna(-1).astype(float)
+    
+            clamped_profit_margin = np.clip(numeric_profit_margin, -999.99, 999.99)
+            chunk['profit_margin'] = pd.Series(clamped_profit_margin, index=chunk.index).apply(
                 lambda x: Decimal(str(round(x, 2))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) 
                 if not pd.isna(x) else Decimal('0.00')
             )
-        
         # Ensure total_bottles_sold is INTEGER
         if 'total_bottles_sold' in chunk.columns:
-            chunk['total_bottles_sold'] = pd.to_numeric(chunk['total_bottles_sold'], errors='coerce').fillna(0).astype(int)
+            chunk['total_bottles_sold'] = pd.to_numeric(chunk['total_bottles_sold'], errors='coerce').fillna(-1).astype(int)
         
         # Add processed_timestamp
         chunk['processed_timestamp'] = pd.Timestamp.now()

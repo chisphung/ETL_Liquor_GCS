@@ -1,5 +1,5 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/interns-2025-467409/transform-job', '.']
+    args: ['build', '-t', 'gcr.io/interns-2025-467409/liquor-sales', '.']
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'transform-job', '--image', 'gcr.io/interns-2025-467409/transform-job', '--platform', 'managed', '--region', 'us-central1']
+    args: ['run', 'deploy', 'liquor-sales', '--image', 'gcr.io/interns-2025-467409/liquor-sales', '--platform', 'managed', '--region', 'us-central1']
